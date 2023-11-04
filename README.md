@@ -1,2 +1,2 @@
 "# RFM_Persol" 
-The first version is by using KMeans
+In this version a scroing function based on quantiles are added.
