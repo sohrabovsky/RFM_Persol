@@ -15,38 +15,43 @@ from datetime import date
 from operator import attrgetter
 
 def scoring(df):
-    index= df[(df['recency'] >= df['recency'].quantile(0)) & (df['recency'] < df['recency'].quantile(0.2))].index
-    df.loc[index, 'recency_score'] = 5
-    index= df[(df['recency'] >= df['recency'].quantile(0.2)) & (df['recency'] < df['recency'].quantile(0.4))].index
-    df.loc[index, 'recency_score'] = 4
-    index= df[(df['recency'] >= df['recency'].quantile(0.4)) & (df['recency'] < df['recency'].quantile(0.6))].index
-    df.loc[index, 'recency_score'] = 3
-    index= df[(df['recency'] >= df['recency'].quantile(0.6)) & (df['recency'] < df['recency'].quantile(0.8))].index
-    df.loc[index, 'recency_score'] = 2
-    index= df[(df['recency'] >= df['recency'].quantile(0.8)) & (df['recency'] <= df['recency'].quantile(1))].index
-    df.loc[index, 'recency_score'] = 1
+    dff= df.copy()
+    dff= dff[dff['cluster'] != 'New Customers']
+    index= dff[(dff['recency'] >= dff['recency'].quantile(0)) & (dff['recency'] < dff['recency'].quantile(0.2))].index
+    dff.loc[index, 'recency_score'] = 5
+    index= dff[(dff['recency'] >= dff['recency'].quantile(0.2)) & (dff['recency'] < dff['recency'].quantile(0.4))].index
+    dff.loc[index, 'recency_score'] = 4
+    index= dff[(dff['recency'] >= dff['recency'].quantile(0.4)) & (dff['recency'] < dff['recency'].quantile(0.6))].index
+    dff.loc[index, 'recency_score'] = 3
+    index= dff[(dff['recency'] >= dff['recency'].quantile(0.6)) & (dff['recency'] < dff['recency'].quantile(0.8))].index
+    dff.loc[index, 'recency_score'] = 2
+    index= dff[(dff['recency'] >= dff['recency'].quantile(0.8)) & (dff['recency'] <= dff['recency'].quantile(1))].index
+    dff.loc[index, 'recency_score'] = 1
     
-    index= df[(df['frequency'] >= df['frequency'].quantile(0)) & (df['frequency'] < df['frequency'].quantile(0.2))].index
-    df.loc[index, 'frequency_store'] = 1
-    index= df[(df['frequency'] >= df['frequency'].quantile(0.2)) & (df['frequency'] < df['frequency'].quantile(0.4))].index
-    df.loc[index, 'frequency_store'] = 2
-    index= df[(df['frequency'] >= df['frequency'].quantile(0.4)) & (df['frequency'] < df['frequency'].quantile(0.6))].index
-    df.loc[index, 'frequency_store'] = 3
-    index= df[(df['frequency'] >= df['frequency'].quantile(0.6)) & (df['frequency'] < df['frequency'].quantile(0.8))].index
-    df.loc[index, 'frequency_store'] = 4
-    index= df[(df['frequency'] >= df['frequency'].quantile(0.8)) & (df['frequency'] <= df['frequency'].quantile(1))].index
-    df.loc[index, 'frequency_store'] = 5
+    index= dff[(dff['frequency'] >= dff['frequency'].quantile(0)) & (dff['frequency'] < dff['frequency'].quantile(0.2))].index
+    dff.loc[index, 'frequency_score'] = 1
+    index= dff[(dff['frequency'] >= dff['frequency'].quantile(0.2)) & (dff['frequency'] < dff['frequency'].quantile(0.4))].index
+    dff.loc[index, 'frequency_score'] = 2
+    index= dff[(dff['frequency'] >= dff['frequency'].quantile(0.4)) & (dff['frequency'] < dff['frequency'].quantile(0.6))].index
+    dff.loc[index, 'frequency_score'] = 3
+    index= dff[(dff['frequency'] >= dff['frequency'].quantile(0.6)) & (dff['frequency'] < dff['frequency'].quantile(0.8))].index
+    dff.loc[index, 'frequency_score'] = 4
+    index= dff[(dff['frequency'] >= dff['frequency'].quantile(0.8)) & (dff['frequency'] <= dff['frequency'].quantile(1))].index
+    dff.loc[index, 'frequency_score'] = 5
 
-    index= df[(df['monetary'] >= df['monetary'].quantile(0)) & (df['monetary'] < df['monetary'].quantile(0.2))].index
-    df.loc[index, 'monetary_score'] = 1
-    index= df[(df['monetary'] >= df['monetary'].quantile(0.2)) & (df['monetary'] < df['monetary'].quantile(0.4))].index
-    df.loc[index, 'monetary_score'] = 2
-    index= df[(df['monetary'] >= df['monetary'].quantile(0.4)) & (df['monetary'] < df['monetary'].quantile(0.6))].index
-    df.loc[index, 'monetary_score'] = 3
-    index= df[(df['monetary'] >= df['monetary'].quantile(0.6)) & (df['monetary'] < df['monetary'].quantile(0.8))].index
-    df.loc[index, 'monetary_score'] = 4
-    index= df[(df['monetary'] >= df['monetary'].quantile(0.8)) & (df['monetary'] <= df['monetary'].quantile(1))].index
-    df.loc[index, 'monetary_score'] = 5
+    index= dff[(df['monetary'] >= dff['monetary'].quantile(0)) & (dff['monetary'] < dff['monetary'].quantile(0.2))].index
+    dff.loc[index, 'monetary_score'] = 1
+    index= dff[(dff['monetary'] >= dff['monetary'].quantile(0.2)) & (dff['monetary'] < dff['monetary'].quantile(0.4))].index
+    dff.loc[index, 'monetary_score'] = 2
+    index= dff[(dff['monetary'] >= dff['monetary'].quantile(0.4)) & (dff['monetary'] < dff['monetary'].quantile(0.6))].index
+    dff.loc[index, 'monetary_score'] = 3
+    index= dff[(dff['monetary'] >= dff['monetary'].quantile(0.6)) & (dff['monetary'] < dff['monetary'].quantile(0.8))].index
+    dff.loc[index, 'monetary_score'] = 4
+    index= dff[(dff['monetary'] >= dff['monetary'].quantile(0.8)) & (dff['monetary'] <= dff['monetary'].quantile(1))].index
+    dff.loc[index, 'monetary_score'] = 5
+
+    dff['RFM_score']= dff['recency_score'] + dff['frequency_score'] + dff['monetary_score']
+    df.loc[dff.index, ['recency_score', 'frequency_score', 'monetary_score', 'RFM_score']] = dff.loc[:, ['recency_score', 'frequency_score', 'monetary_score', 'RFM_score']]
 
     return df
     
@@ -81,6 +86,21 @@ def cluster_naming(df):
         i += 1
     return df
 
+def plotting(df, name):
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(projection='3d')
+    for cluster in df.cluster.unique():
+        x = df[df['cluster'] == cluster]['recency']
+        y = df[df['cluster'] == cluster]['frequency']
+        z = df[df['cluster'] == cluster]['monetary']
+        ax.scatter(x, y, z, label=cluster)
+        ax.set_xlabel('Recency')
+        ax.set_ylabel('Frequency')
+        ax.set_zlabel("Monetary", rotation=90)
+        ax.zaxis.labelpad = -0.2  # <- change the value here
+    plt.legend()
+    plt.title(f'RFM Segmentation for {name} Product')
+    plt.savefig(path + '\\' + f'rfm_{name}.jpeg')
 
 # Specifying the ODBC driver, server name, database, etc. directly
 cnxn = pyodbc.connect(
@@ -167,24 +187,6 @@ rfm_wood.cluster.fillna('New Customers', inplace=True)
 
 rfm_wood.loc[:, 'date'] = date.today()
 
-cluster_naming(rfm_wood)
-
-fig = plt.figure(figsize=(8, 6))
-ax = fig.add_subplot(projection='3d')
-for cluster in rfm_wood.cluster.unique():
-    x = rfm_wood[rfm_wood['cluster'] == cluster]['recency']
-    y = rfm_wood[rfm_wood['cluster'] == cluster]['frequency']
-    z = rfm_wood[rfm_wood['cluster'] == cluster]['monetary']
-    ax.scatter(x, y, z, label=cluster)
-    ax.set_xlabel('Recency')
-    ax.set_ylabel('Frequency')
-    ax.set_zlabel("Monetary", rotation=90)
-    ax.zaxis.labelpad = -0.2  # <- change the value here
-plt.legend()
-plt.title('RFM Segmentation for Wood Product')
-plt.savefig(path + '\\' + 'rfm_wood.jpeg')
-
-
 # RFM Celluluse
 # df_Cellulosic
 cellulosic_monetary = df_Cellulosic.groupby('CustomerCode')['NetAmount'].sum()
@@ -235,26 +237,6 @@ rfm_cellulosic.loc[cellulosic_retCustomers_index,
 rfm_cellulosic.cluster.fillna('New Customers', inplace=True)
 
 rfm_cellulosic.loc[:, 'date'] = date.today()
-cluster_naming(rfm_cellulosic)
-
-fig = plt.figure(figsize=(8, 6))
-ax = fig.add_subplot(projection='3d')
-
-for cluster in rfm_cellulosic.cluster.unique():
-    x = rfm_cellulosic[rfm_cellulosic['cluster']
-                       == cluster]['recency']
-    y = rfm_cellulosic[rfm_cellulosic['cluster']
-                       == cluster]['frequency']
-    z = rfm_cellulosic[rfm_cellulosic['cluster']
-                       == cluster]['monetary']
-    ax.scatter(x, y, z, label=cluster)
-    ax.set_xlabel('Recency')
-    ax.set_ylabel('Frequency')
-    ax.set_zlabel("Monetary", rotation=90)
-    ax.zaxis.labelpad = -0.2  # <- change the value here
-plt.title('RFM Segmentation for Cellulosic Product')
-plt.legend()
-plt.savefig(path + '\\' + 'rfm_cellulosic.jpeg')
 
 # RFM chemical - polymer
 
@@ -311,29 +293,17 @@ rfm_chemical.cluster.fillna('New Customers', inplace=True)
 
 rfm_chemical.loc[:, 'date'] = date.today()
 
+cluster_naming(rfm_wood)
+cluster_naming(rfm_cellulosic)
 cluster_naming(rfm_chemical)
 
-
-fig = plt.figure(figsize=(8, 6))
-ax = fig.add_subplot(projection='3d')
-
-for cluster in rfm_chemical.cluster.unique():
-    x = rfm_chemical[rfm_chemical['cluster'] == cluster]['recency']
-    y = rfm_chemical[rfm_chemical['cluster'] == cluster]['frequency']
-    z = rfm_chemical[rfm_chemical['cluster'] == cluster]['monetary']
-    ax.scatter(x, y, z, label=cluster)
-    ax.set_xlabel('Recency')
-    ax.set_ylabel('Frequency')
-    ax.set_zlabel("Monetary", rotation=90)
-    ax.zaxis.labelpad = -0.2  # <- change the value here
-plt.title('RFM Segmentation for Chemical Product')
-plt.legend()
-plt.savefig(path + '\\' + 'rfm_chemical.jpeg')
+plotting(rfm_wood, 'wood')
+plotting(rfm_cellulosic, 'cellulosic')
+plotting(rfm_chemical, 'chemical')
 
 scoring(rfm_wood)
 scoring(rfm_cellulosic)
 scoring(rfm_chemical)
-
 
 rfm_wood = rfm_wood.merge(right=df_wood[[
                           'CustomerCode', 'Customer']].drop_duplicates(), how='left', on='CustomerCode')
