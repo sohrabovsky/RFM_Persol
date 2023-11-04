@@ -14,7 +14,42 @@ import plotly.express as px
 from datetime import date
 from operator import attrgetter
 
+def scoring(df):
+    index= df[(df['recency'] >= df['recency'].quantile(0)) & (df['recency'] < df['recency'].quantile(0.2))].index
+    df.loc[index, 'recency_score'] = 5
+    index= df[(df['recency'] >= df['recency'].quantile(0.2)) & (df['recency'] < df['recency'].quantile(0.4))].index
+    df.loc[index, 'recency_score'] = 4
+    index= df[(df['recency'] >= df['recency'].quantile(0.4)) & (df['recency'] < df['recency'].quantile(0.6))].index
+    df.loc[index, 'recency_score'] = 3
+    index= df[(df['recency'] >= df['recency'].quantile(0.6)) & (df['recency'] < df['recency'].quantile(0.8))].index
+    df.loc[index, 'recency_score'] = 2
+    index= df[(df['recency'] >= df['recency'].quantile(0.8)) & (df['recency'] <= df['recency'].quantile(1))].index
+    df.loc[index, 'recency_score'] = 1
+    
+    index= df[(df['frequency'] >= df['frequency'].quantile(0)) & (df['frequency'] < df['frequency'].quantile(0.2))].index
+    df.loc[index, 'frequency_store'] = 1
+    index= df[(df['frequency'] >= df['frequency'].quantile(0.2)) & (df['frequency'] < df['frequency'].quantile(0.4))].index
+    df.loc[index, 'frequency_store'] = 2
+    index= df[(df['frequency'] >= df['frequency'].quantile(0.4)) & (df['frequency'] < df['frequency'].quantile(0.6))].index
+    df.loc[index, 'frequency_store'] = 3
+    index= df[(df['frequency'] >= df['frequency'].quantile(0.6)) & (df['frequency'] < df['frequency'].quantile(0.8))].index
+    df.loc[index, 'frequency_store'] = 4
+    index= df[(df['frequency'] >= df['frequency'].quantile(0.8)) & (df['frequency'] <= df['frequency'].quantile(1))].index
+    df.loc[index, 'frequency_store'] = 5
 
+    index= df[(df['monetary'] >= df['monetary'].quantile(0)) & (df['monetary'] < df['monetary'].quantile(0.2))].index
+    df.loc[index, 'monetary_score'] = 1
+    index= df[(df['monetary'] >= df['monetary'].quantile(0.2)) & (df['monetary'] < df['monetary'].quantile(0.4))].index
+    df.loc[index, 'monetary_score'] = 2
+    index= df[(df['monetary'] >= df['monetary'].quantile(0.4)) & (df['monetary'] < df['monetary'].quantile(0.6))].index
+    df.loc[index, 'monetary_score'] = 3
+    index= df[(df['monetary'] >= df['monetary'].quantile(0.6)) & (df['monetary'] < df['monetary'].quantile(0.8))].index
+    df.loc[index, 'monetary_score'] = 4
+    index= df[(df['monetary'] >= df['monetary'].quantile(0.8)) & (df['monetary'] <= df['monetary'].quantile(1))].index
+    df.loc[index, 'monetary_score'] = 5
+
+    return df
+    
 def mean_purchase_widnow(df):
     customers = df.CustomerCode.unique()
     dff = pd.DataFrame()
@@ -294,6 +329,11 @@ for cluster in rfm_chemical.cluster.unique():
 plt.title('RFM Segmentation for Chemical Product')
 plt.legend()
 plt.savefig(path + '\\' + 'rfm_chemical.jpeg')
+
+scoring(rfm_wood)
+scoring(rfm_cellulosic)
+scoring(rfm_chemical)
+
 
 rfm_wood = rfm_wood.merge(right=df_wood[[
                           'CustomerCode', 'Customer']].drop_duplicates(), how='left', on='CustomerCode')
