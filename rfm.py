@@ -152,14 +152,17 @@ def rfm_calculations(df):
 # RFM Wood
 rfm_wood= rfm_calculations(df_wood)
 rfm_wood.loc[:, 'vertical']= 'wood'
+rfm_wood= rfm_wood.sort_values(by= 'RFM_score', ascending= False)
 
 # RFM Cellulosic
 rfm_cellulosic= rfm_calculations(df_Cellulosic)
 rfm_cellulosic.loc[:, 'vertical']= 'cellulosic'
+rfm_cellulosic= rfm_cellulosic.sort_values(by= 'RFM_score', ascending= False)
 
 # RFM Chemical - Polymer
 rfm_chemical= rfm_calculations(df_chemical_polymer)
 rfm_chemical.loc[:, 'vertical']= 'chemical'
+rfm_chemical= rfm_chemical.sort_values(by= 'RFM_score', ascending= False)
 
 def plotting(rfm, name):
     fig = plt.figure(figsize=(8, 6))                
