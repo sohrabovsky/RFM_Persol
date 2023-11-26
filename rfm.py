@@ -70,8 +70,8 @@ df_Cellulosic= df_Cellulosic.reset_index(drop= True)
 cluster_names = ['Champion', 'Loyal', 'Promising','Needing Attention']
 
 def rfm_calculations(df):
-    monetary = df.groupby('CustomerCode')['NetAmount'].sum()
-    monetary = monetary.reset_index()
+    quantity = df.groupby('CustomerCode')['Quantity'].sum()    # Monetary here is Quantity because of inflation effect
+    quantity = quantity.reset_index()
 
     df["jdate"] = df["InvoiceDate"].jalali.parse_jalali("%Y/%m/%d")
     for index in range(len(df)):
@@ -86,14 +86,14 @@ def rfm_calculations(df):
     frequency = df.groupby('CustomerCode')['InvoiceNumber'].count()
     frequency = frequency.reset_index()
 
-    dataframes = [recency, frequency, monetary, latency]
+    dataframes = [recency, frequency, quantity, latency]
     rfm = reduce(lambda df1, df2: pd.merge(
     left=df1, right=df2, how='inner', on='CustomerCode'), dataframes)
 
     rfm.rename(columns={
         'Diff_x': 'recency',
         'InvoiceNumber': 'frequency',
-        'NetAmount': 'monetary',
+        'Quantity': 'quantity',
         'Diff_y': 'latency'
     }, inplace=True)
     def mean_purchase_widnow(df):
@@ -117,16 +117,16 @@ def rfm_calculations(df):
     scaler = StandardScaler()
 
     rfm_norm = pd.DataFrame(scaler.fit_transform(
-    rfm[['recency', 'frequency', 'monetary']]), columns=['recency', 'frequency', 'monetary'])
+    rfm[['recency', 'frequency', 'quantity']]), columns=['recency', 'frequency', 'quantity'])
 
     rfm_norm = rfm_norm.loc[retCustomers_index, :]
 
     kmeans = KMeans(n_clusters=4, max_iter=50)
-    kmeans.fit(rfm_norm[['recency', 'frequency', 'monetary']])
+    kmeans.fit(rfm_norm[['recency', 'frequency', 'quantity']])
     rfm_norm['cluster'] = kmeans.labels_
 
     ### Scoring 
-    rfm_norm['RFM_score']= -rfm_norm['recency'] + rfm_norm['frequency'] + rfm_norm['monetary']
+    rfm_norm['RFM_score']= -rfm_norm['recency'] + rfm_norm['frequency'] + rfm_norm['quantity']
 
     
     rfm.loc[retCustomers_index,'cluster'] = rfm_norm.loc[retCustomers_index, 'cluster']
@@ -144,7 +144,7 @@ def rfm_calculations(df):
         return rfm_norm
     rfm_norm= cluster_naming(rfm_norm)
     rfm.loc[retCustomers_index,'cluster'] = rfm_norm.loc[retCustomers_index, 'cluster']
-    rfm.loc[:, 'date'] = date.today()
+    rfm.loc[:, 'date'] = str(date.today())
     rfm = rfm.merge(right=df[[
                           'CustomerCode', 'Customer']].drop_duplicates(), how='left', on='CustomerCode')
     return(rfm)
@@ -170,23 +170,19 @@ def plotting(rfm, name):
     for cluster in cluster_names:
         x = rfm[rfm['cluster'] == cluster]['recency']
         y = rfm[rfm['cluster'] == cluster]['frequency']
-        z = rfm[rfm['cluster'] == cluster]['monetary']
+        z = rfm[rfm['cluster'] == cluster]['quantity']
         ax.scatter(x, y, z, label=cluster)
         ax.set_xlabel('Recency')
         ax.set_ylabel('Frequency')
-        ax.set_zlabel("Monetary", rotation=90)
+        ax.set_zlabel("Quantity", rotation=90)
         ax.zaxis.labelpad = -0.2  # <- change the value here 
 
     plt.legend()
     plt.title(f'RFM Segmentation for {name} Product')
     plt.savefig(path + '\\' + f'rfm_{name}.jpeg')
 
-plotting(rfm_wood, 'Wood')
-plotting(rfm_cellulosic, 'Cellulosic')
-plotting(rfm_chemical, 'Chemical')
-
-with pd.ExcelWriter(r'C:\Users\mk-05\Documents\Python Scripts\rfm\rfm.xlsx') as writer:
-
-    rfm_wood.to_excel(writer, sheet_name='wood', index=False)
-    rfm_cellulosic.to_excel(writer, sheet_name='cellulosic', index=False)
-    rfm_chemical.to_excel(writer, sheet_name='chemical', index=False)
+#plotting(rfm_wood, 'Wood')
+#plotting(rfm_cellulosic, 'Cellulosic')
+#plotting(rfm_chemical, 'Chemical')
+df= pd.concat([rfm_wood, rfm_cellulosic, rfm_chemical])
+df.to_excel('rfm_segmentation.xlsx', index= False)
