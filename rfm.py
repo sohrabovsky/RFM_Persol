@@ -41,13 +41,21 @@ df_wood[~df_wood['ProductName'].isin(wood_eliminated_products)]
 
 
 
-df_Cellulosic = df[df['Category'] ==
+df_cellulosic = df[df['Category'] ==
                    'Cellulosic Products'].reset_index(drop=True)
 df_chemical_polymer = df[df['Category'] ==
                          'Chemical & Polymer Products'].reset_index(drop=True)
 
 # Eliminating products cleaning (Cellulosic):
-df_Cellulosic= df_Cellulosic[~(df_Cellulosic['ProductName'].str.contains('GB')) | (df_Cellulosic['ProductName'].str.contains('پشت طوسی'))]
+df_cellulosic= df_cellulosic[~(df_cellulosic['ProductName'].str.contains('GB')) | (df_cellulosic['ProductName'].str.contains('پشت طوسی'))]
+
+# If we want to separate Cellulosic departments
+mahsa_customers= pd.read_excel('MRB cellulose customers.xlsx')
+mahsa_customers= mahsa_customers[mahsa_customers['is_mahsa'] == True].customer.unique()
+
+df_cellulosic_mahsa= df_cellulosic[df_cellulosic['Customer'].isin(mahsa_customers)]
+
+df_cellulosic_alireza= df_cellulosic[~df_cellulosic['Customer'].isin(mahsa_customers)]
 
 shayan_customer_code = df_wood[df_wood['Customer']
                                == 'شایان حقیقی']['CustomerCode'].unique()[0]
@@ -59,12 +67,10 @@ df_wood['family'] = df_wood['Customer'].apply(lambda x: x.split()[-1])
 
 index = df_wood[df_wood['family'].isin(syamak_file['family'].unique())].index
 
-#df_wood.loc[index, 'Customer'] = 'شایان حقیقی'
-#df_wood.loc[index, 'CustomerCode'] = shayan_customer_code
-
 df_wood.drop(index= index, inplace= True)
 df_wood= df_wood.reset_index(drop= True)
-df_Cellulosic= df_Cellulosic.reset_index(drop= True)
+df_cellulosic_mahsa= df_cellulosic_mahsa.reset_index(drop= True)
+df_cellulosic_alireza= df_cellulosic_alireza.reset_index(drop= True)
 
 
 cluster_names = ['Champion', 'Loyal', 'Promising','Needing Attention']
@@ -155,9 +161,13 @@ rfm_wood.loc[:, 'vertical']= 'wood'
 rfm_wood= rfm_wood.sort_values(by= 'RFM_score', ascending= False)
 
 # RFM Cellulosic
-rfm_cellulosic= rfm_calculations(df_Cellulosic)
-rfm_cellulosic.loc[:, 'vertical']= 'cellulosic'
-rfm_cellulosic= rfm_cellulosic.sort_values(by= 'RFM_score', ascending= False)
+rfm_cellulosic_mahsa= rfm_calculations(df_cellulosic_mahsa)
+rfm_cellulosic_mahsa.loc[:, 'vertical']= 'cellulosic_mahsa'
+rfm_cellulosic_mahsa= rfm_cellulosic_mahsa.sort_values(by= 'RFM_score', ascending= False)
+
+rfm_cellulosic_alireza= rfm_calculations(df_cellulosic_alireza)
+rfm_cellulosic_alireza.loc[:, 'vertical']= 'cellulosic_alireza'
+rfm_cellulosic_alireza= rfm_cellulosic_alireza.sort_values(by= 'RFM_score', ascending= False)
 
 # RFM Chemical - Polymer
 rfm_chemical= rfm_calculations(df_chemical_polymer)
@@ -170,19 +180,20 @@ def plotting(rfm, name):
     for cluster in cluster_names:
         x = rfm[rfm['cluster'] == cluster]['recency']
         y = rfm[rfm['cluster'] == cluster]['frequency']
-        z = rfm[rfm['cluster'] == cluster]['quantity']
+        z = rfm[rfm['cluster'] == cluster]['quantity']/1000
         ax.scatter(x, y, z, label=cluster)
-        ax.set_xlabel('Recency')
+        ax.set_xlabel('Recency (days)')
         ax.set_ylabel('Frequency')
-        ax.set_zlabel("Quantity", rotation=90)
-        ax.zaxis.labelpad = -0.2  # <- change the value here 
+        ax.set_zlabel("Quantity (ton)", rotation=90)
+        ax.zaxis.labelpad = -0.2 
 
     plt.legend()
     plt.title(f'RFM Segmentation for {name} Product')
     plt.savefig(path + '\\' + f'rfm_{name}.jpeg')
 
-#plotting(rfm_wood, 'Wood')
-#plotting(rfm_cellulosic, 'Cellulosic')
-#plotting(rfm_chemical, 'Chemical')
-df= pd.concat([rfm_wood, rfm_cellulosic, rfm_chemical])
+plotting(rfm_wood, 'Wood')
+plotting(rfm_cellulosic_mahsa, 'Cellulosic_Mahsa')
+plotting(rfm_cellulosic_alireza, 'Cellulosic_Alireza')
+plotting(rfm_chemical, 'Chemical')
+df= pd.concat([rfm_wood, rfm_cellulosic_mahsa, rfm_cellulosic_alireza, rfm_chemical])
 df.to_excel('rfm_segmentation.xlsx', index= False)
