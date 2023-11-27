@@ -39,8 +39,6 @@ df_wood = df[df['Category'] == 'Wood Products'].reset_index(drop=True)
 wood_eliminated_products= ['تخته بریوزا (غان) ', 'چوب نیم گرد', 'چوب گرده بینه (Debarked & cut wood Log)']
 df_wood[~df_wood['ProductName'].isin(wood_eliminated_products)]
 
-
-
 df_Cellulosic = df[df['Category'] ==
                    'Cellulosic Products'].reset_index(drop=True)
 df_chemical_polymer = df[df['Category'] ==
@@ -58,14 +56,10 @@ syamak_file['family'] = syamak_file['shayan'].apply(lambda x: x.split()[-1])
 df_wood['family'] = df_wood['Customer'].apply(lambda x: x.split()[-1])
 
 index = df_wood[df_wood['family'].isin(syamak_file['family'].unique())].index
-
-#df_wood.loc[index, 'Customer'] = 'شایان حقیقی'
-#df_wood.loc[index, 'CustomerCode'] = shayan_customer_code
-
 df_wood.drop(index= index, inplace= True)
 df_wood= df_wood.reset_index(drop= True)
-df_Cellulosic= df_Cellulosic.reset_index(drop= True)
 
+df_Cellulosic= df_Cellulosic.reset_index(drop= True)
 
 cluster_names = ['Champion', 'Loyal', 'Promising','Needing Attention']
 
@@ -147,6 +141,9 @@ def rfm_calculations(df):
     rfm.loc[:, 'date'] = str(date.today())
     rfm = rfm.merge(right=df[[
                           'CustomerCode', 'Customer']].drop_duplicates(), how='left', on='CustomerCode')
+    rfm.rename(columns= {
+        'recency' : 'recency (days)'
+    }, inplace= True)
     return(rfm)
 
 # RFM Wood
@@ -164,25 +161,25 @@ rfm_chemical= rfm_calculations(df_chemical_polymer)
 rfm_chemical.loc[:, 'vertical']= 'chemical'
 rfm_chemical= rfm_chemical.sort_values(by= 'RFM_score', ascending= False)
 
-def plotting(rfm, name):
-    fig = plt.figure(figsize=(8, 6))                
-    ax = fig.add_subplot(projection='3d')
-    for cluster in cluster_names:
-        x = rfm[rfm['cluster'] == cluster]['recency']
-        y = rfm[rfm['cluster'] == cluster]['frequency']
-        z = rfm[rfm['cluster'] == cluster]['quantity']
-        ax.scatter(x, y, z, label=cluster)
-        ax.set_xlabel('Recency')
-        ax.set_ylabel('Frequency')
-        ax.set_zlabel("Quantity", rotation=90)
-        ax.zaxis.labelpad = -0.2  # <- change the value here 
+# def plotting(rfm, name):
+#     fig = plt.figure(figsize=(8, 6))                
+#     ax = fig.add_subplot(projection='3d')
+#     for cluster in cluster_names:
+#         x = rfm[rfm['cluster'] == cluster]['recency (days)']
+#         y = rfm[rfm['cluster'] == cluster]['frequency']
+#         z = rfm[rfm['cluster'] == cluster]['quantity']
+#         ax.scatter(x, y, z, label=cluster)
+#         ax.set_xlabel('Recency')
+#         ax.set_ylabel('Frequency')
+#         ax.set_zlabel("Quantity", rotation=90)
+#         ax.zaxis.labelpad = -0.2  # <- change the value here 
 
-    plt.legend()
-    plt.title(f'RFM Segmentation for {name} Product')
-    plt.savefig(path + '\\' + f'rfm_{name}.jpeg')
+#     plt.legend()
+#     plt.title(f'RFM Segmentation for {name} Product')
+#     plt.savefig(path + '\\' + f'rfm_{name}.jpeg')
 
-#plotting(rfm_wood, 'Wood')
-#plotting(rfm_cellulosic, 'Cellulosic')
-#plotting(rfm_chemical, 'Chemical')
+# plotting(rfm_wood, 'Wood')
+# plotting(rfm_cellulosic, 'Cellulosic')
+# plotting(rfm_chemical, 'Chemical')
 df= pd.concat([rfm_wood, rfm_cellulosic, rfm_chemical])
 df.to_excel('rfm_segmentation.xlsx', index= False)
