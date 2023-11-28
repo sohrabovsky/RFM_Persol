@@ -30,8 +30,6 @@ df.rename(columns={'G1': 'Category'}, inplace=True)
 df.drop(
     columns=[i for i in df.columns[df.columns.str.contains('G')]], inplace=True)
 
-path = r"C:\Users\mk-05\Documents\Python Scripts\rfm"
-
 
 df_wood = df[df['Category'] == 'Wood Products'].reset_index(drop=True)
 
@@ -49,8 +47,7 @@ df_Cellulosic= df_Cellulosic[~(df_Cellulosic['ProductName'].str.contains('GB')) 
 
 shayan_customer_code = df_wood[df_wood['Customer']
                                == 'شایان حقیقی']['CustomerCode'].unique()[0]
-syamak_file = pd.read_excel(
-    r'C:\Users\mk-05\Documents\Python Scripts\syamak.xlsx', usecols=['shayan'])
+syamak_file = pd.read_excel('syamak.xlsx', usecols=['shayan'])
 syamak_file = syamak_file.drop(index=15).reset_index(drop=True)
 syamak_file['family'] = syamak_file['shayan'].apply(lambda x: x.split()[-1])
 df_wood['family'] = df_wood['Customer'].apply(lambda x: x.split()[-1])
@@ -176,7 +173,7 @@ rfm_chemical= rfm_chemical.sort_values(by= 'RFM_score', ascending= False)
 
 #     plt.legend()
 #     plt.title(f'RFM Segmentation for {name} Product')
-#     plt.savefig(path + '\\' + f'rfm_{name}.jpeg')
+#     plt.savefig(f'rfm_{name}.jpeg')
 
 # plotting(rfm_wood, 'Wood')
 # plotting(rfm_cellulosic, 'Cellulosic')
