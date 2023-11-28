@@ -139,7 +139,7 @@ def rfm_calculations(df):
     rfm = rfm.merge(right=df[[
                           'CustomerCode', 'Customer']].drop_duplicates(), how='left', on='CustomerCode')
     rfm.rename(columns= {
-        'recency' : 'recency (days)'
+        'recency' : 'recency_days'
     }, inplace= True)
     return(rfm)
 
@@ -179,4 +179,20 @@ rfm_chemical= rfm_chemical.sort_values(by= 'RFM_score', ascending= False)
 # plotting(rfm_cellulosic, 'Cellulosic')
 # plotting(rfm_chemical, 'Chemical')
 df= pd.concat([rfm_wood, rfm_cellulosic, rfm_chemical])
-df.to_excel('rfm_segmentation.xlsx', index= False)
+
+import psycopg2
+from sqlalchemy import create_engine
+
+conn= psycopg2.connect(
+    user= "postgres",
+    password= "&rXK(6(N4(6)=e{b",
+    host= 'localhost',
+    port= '5432',
+    database= 'customerDB'
+)
+engine = create_engine('postgresql://postgres:&rXK(6(N4(6)=e{b@localhost:5432/customerDB')
+table_name= "RFM_Table"
+df.to_sql(table_name, con= engine, if_exists= 'append', index= False)
+
+engine.dispose()
+conn.close()
