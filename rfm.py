@@ -28,13 +28,13 @@ df_wood = df[df['Category'] == 'Wood Products'].reset_index(drop=True)
 wood_eliminated_products= ['تخته بریوزا (غان) ', 'چوب نیم گرد', 'چوب گرده بینه (Debarked & cut wood Log)']
 df_wood[~df_wood['ProductName'].isin(wood_eliminated_products)]
 
-df_Cellulosic = df[df['Category'] ==
+df_cellulosic = df[df['Category'] ==
                    'Cellulosic Products'].reset_index(drop=True)
 df_chemical_polymer = df[df['Category'] ==
                          'Chemical & Polymer Products'].reset_index(drop=True)
 
 # Eliminating products cleaning (Cellulosic):
-df_Cellulosic= df_Cellulosic[~(df_Cellulosic['ProductName'].str.contains('GB')) | (df_Cellulosic['ProductName'].str.contains('پشت طوسی'))]
+df_cellulosic= df_cellulosic[~(df_cellulosic['ProductName'].str.contains('GB')) | (df_cellulosic['ProductName'].str.contains('پشت طوسی'))]
 
 shayan_customer_code = df_wood[df_wood['Customer']
                                == 'شایان حقیقی']['CustomerCode'].unique()[0]
@@ -47,7 +47,7 @@ index = df_wood[df_wood['family'].isin(syamak_file['family'].unique())].index
 df_wood.drop(index= index, inplace= True)
 df_wood= df_wood.reset_index(drop= True)
 
-df_Cellulosic= df_Cellulosic.reset_index(drop= True)
+df_cellulosic= df_cellulosic.reset_index(drop= True)
 # If we want to separate Cellulosic departments
 mahsa_customers= pd.read_excel('MRB cellulose customers.xlsx')
 mahsa_customers= mahsa_customers[mahsa_customers['is_mahsa'] == True].customer.unique()
@@ -178,7 +178,7 @@ rfm_chemical= rfm_chemical.sort_values(by= 'RFM_score', ascending= False)
 # plotting(rfm_wood, 'Wood')
 # plotting(rfm_cellulosic, 'Cellulosic')
 # plotting(rfm_chemical, 'Chemical')
-df= pd.concat([rfm_wood, rfm_cellulosic, rfm_chemical])
+df= pd.concat([rfm_wood, rfm_cellulosic_mahsa, rfm_cellulosic_alireza, rfm_chemical])
 
 import psycopg2
 from sqlalchemy import create_engine
