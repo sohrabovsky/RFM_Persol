@@ -2,6 +2,7 @@ from functools import reduce
 import pandas as pd
 import numpy as np
 import jalali_pandas
+import jdatetime
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 import pyodbc
@@ -57,19 +58,23 @@ cluster_names = ['champion', 'loyal', 'promising', 'needing_attention']
 mahsa_credit_cellulosic = {'champion': 25000000000,
                 'loyal': 15000000000,
                 'promising': 2000000000,
-                'needing_attention': 0}
+                'needing_attention': 0,
+                'New Customers': 0}
 alireza_credit_cellulosic = {'champion': 10000000000,
                            'loyal': 7000000000,
                            'promising': 1000000000,
-                           'needing_attention': 0}
+                           'needing_attention': 0,
+                            'New Customers': 0}
 credit_wood = {'champion': 40000000000,
                'loyal': 5000000000,
                'promising': 1000000000,
-               'needing_attention': 0}
+               'needing_attention': 0,
+               'New Customers' : 0}
 credit_chemical = {'champion': 13000000000,
                    'loyal': 6000000000,
                    'promising': 1000000000,
-                   'needing_attention': 0}
+                   'needing_attention': 0,
+                   'New Customers': 0}
 first_month_penalty = 1.05
 second_month_penalty = 1.1
 # Debits
@@ -120,17 +125,26 @@ def credit_system(df, credit_dictionary):
     dfff['Debit'].fillna(0, inplace=True)
     for cluster in cluster_names:
         index = dfff[(dfff['cluster'] == cluster) & (dfff['FinalElapsedDays'] >= -30)].index
-        dfff.loc[index, 'credit'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit']
+        dfff.loc[index, 'credit (IRR)'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit']
+        dfff.loc[index, "Base Credit"]= credit_dictionary[cluster]
+
         index = dfff[
             (dfff['cluster'] == cluster) & (dfff['FinalElapsedDays'] >= -60) & (dfff['FinalElapsedDays'] < -30)].index
-        dfff.loc[index, 'credit'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit'] * first_month_penalty
+        dfff.loc[index, 'credit (IRR)'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit'] * first_month_penalty
+        dfff.loc[index, "Base Credit"]= credit_dictionary[cluster]
+
         index = dfff[
             (dfff['cluster'] == cluster) & (dfff['FinalElapsedDays'] >= -90) & (dfff['FinalElapsedDays'] < -60)].index
-        dfff.loc[index, 'credit'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit'] * second_month_penalty
+        dfff.loc[index, 'credit (IRR)'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit'] * second_month_penalty
+        dfff.loc[index, "Base Credit"]= credit_dictionary[cluster]
+
         index = dfff[(dfff['cluster'] == cluster) & (dfff['FinalElapsedDays'] < -90)].index
-        dfff.loc[index, 'credit'] = 0
+        dfff.loc[index, 'credit (IRR)'] = 0
+        dfff.loc[index, "Base Credit"]= credit_dictionary[cluster]
+
     index = dfff[dfff['bouncedCheck'] == True].index
-    dfff.loc[index, 'credit'] = 0
+    dfff.loc[index, 'credit (IRR)'] = 0
+
     return dfff
 
 
@@ -157,7 +171,7 @@ def rfm_calculations(df):
         'InvoiceNumber': 'frequency',
         'Quantity': 'quantity',
         'Diff_y': 'latency',
-        'NetAmount': 'monetary'
+        'NetAmount': 'monetary (IRR)'
     }, inplace=True)
     new_customer_window_size = mean_purchase_widnow(df)
     retCustomers_index = rfm[rfm['latency'] > new_customer_window_size].index
@@ -173,13 +187,16 @@ def rfm_calculations(df):
     rfm.loc[retCustomers_index, 'cluster'] = rfm_norm.loc[retCustomers_index, 'cluster']
     rfm.loc[retCustomers_index, 'RFM_score'] = rfm_norm.loc[retCustomers_index, 'RFM_score']
     rfm.cluster.fillna('New Customers', inplace=True)
-    rfm.loc[:, 'new_customer_window_size'] = new_customer_window_size
+    rfm.loc[:, 'new_customer_window_size (days)'] = new_customer_window_size
     rfm_norm = cluster_naming(rfm_norm)
     rfm.loc[retCustomers_index, 'cluster'] = rfm_norm.loc[retCustomers_index, 'cluster']
+    index= rfm[rfm['cluster'] == 'New Customers'].index
+    rfm.loc[index, 'RFM_score']= -100
+    rfm.loc[:, 'date'] = str(jdatetime.date.today())
     rfm = rfm.merge(right=df[[
         'CustomerCode', 'Customer']].drop_duplicates(), how='left', on='CustomerCode')
     rfm.rename(columns={
-        'recency': 'recency_days'
+        'recency': 'recency (days)'
     }, inplace=True)
     return rfm
 
