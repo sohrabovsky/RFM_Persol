@@ -7,7 +7,8 @@ from sklearn.cluster import KMeans
 import pyodbc
 from datetime import date
 from operator import attrgetter
-
+import warnings
+warnings.filterwarnings("ignore")
 # Specifying the ODBC driver, server name, database, etc. directly
 cnxn = pyodbc.connect(
     'DRIVER={ODBC Driver 17 for SQL Server};SERVER=192.168.10.41;DATABASE=ReportDB;UID=SelfServiceBI;PWD=MobbMobb66!')
@@ -202,22 +203,4 @@ rfm_chemical = rfm_calculations(df_chemical_polymer)
 rfm_chemical_with_credit = credit_system(rfm_chemical, credit_chemical)
 rfm_chemical_with_credit.drop(columns=['cheque'], inplace=True)
 rfm_chemical_with_credit = rfm_chemical_with_credit.sort_values(by='RFM_score', ascending=False)
-# Writing to DataBase
-import psycopg2
-from sqlalchemy import create_engine
 
-conn = psycopg2.connect(
-    user="postgres",
-    password="&rXK(6(N4(6)=e{b",
-    host='localhost',
-    port='5432',
-    database='customerDB'
-)
-engine = create_engine('postgresql://postgres:&rXK(6(N4(6)=e{b@localhost:5432/customerDB')
-# RFM with credit for wood:
-rfm_wood_with_credit.to_sql("wood_rfm_with_credit", con=engine, if_exists='replace', index=False)
-rfm_cellulosic_mahsa_with_credit.to_sql("cellulosic1_rfm_with_credit", con=engine, if_exists='replace', index=False)
-rfm_cellulosic_alireza_with_credit.to_sql("cellulosic2_rfm_with_credit", con=engine, if_exists='replace', index=False)
-rfm_chemical_with_credit.to_sql("chemical_rfm_with_credit", con=engine, if_exists='replace', index=False)
-engine.dispose()
-conn.close()
