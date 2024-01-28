@@ -77,6 +77,7 @@ credit_chemical = {'champion': 13000000000,
                    'New Customers': 0}
 first_month_penalty = 1.05
 second_month_penalty = 1.1
+third_month_penalty= 1.15
 # Debits
 df_debts_positive = df_debts[df_debts['FinalElapsedDays'] < 0]
 index = df_debts_positive[df_debts_positive['docType'] == 'اسناد دريافتني'].index
@@ -125,17 +126,17 @@ def credit_system(df, credit_dictionary):
     dfff['Debit'].fillna(0, inplace=True)
     for cluster in cluster_names:
         index = dfff[(dfff['cluster'] == cluster) & (dfff['FinalElapsedDays'] >= -30)].index
-        dfff.loc[index, 'credit (IRR)'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit']
+        dfff.loc[index, 'credit (IRR)'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit']*first_month_penalty
         dfff.loc[index, "Base Credit"]= credit_dictionary[cluster]
 
         index = dfff[
             (dfff['cluster'] == cluster) & (dfff['FinalElapsedDays'] >= -60) & (dfff['FinalElapsedDays'] < -30)].index
-        dfff.loc[index, 'credit (IRR)'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit'] * first_month_penalty
+        dfff.loc[index, 'credit (IRR)'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit'] * second_month_penalty
         dfff.loc[index, "Base Credit"]= credit_dictionary[cluster]
 
         index = dfff[
             (dfff['cluster'] == cluster) & (dfff['FinalElapsedDays'] >= -90) & (dfff['FinalElapsedDays'] < -60)].index
-        dfff.loc[index, 'credit (IRR)'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit'] * second_month_penalty
+        dfff.loc[index, 'credit (IRR)'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit'] * third_month_penalty
         dfff.loc[index, "Base Credit"]= credit_dictionary[cluster]
 
         index = dfff[(dfff['cluster'] == cluster) & (dfff['FinalElapsedDays'] < -90)].index
