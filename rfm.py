@@ -8,6 +8,7 @@ from sklearn.cluster import KMeans
 import pyodbc
 from datetime import date
 from operator import attrgetter
+from sqlalchemy import create_engine
 import warnings
 warnings.filterwarnings("ignore")
 # Specifying the ODBC driver, server name, database, etc. directly
@@ -56,15 +57,15 @@ df_cellulosic_alireza = df_cellulosic_alireza.reset_index(drop=True)
 cluster_names = ['champion', 'loyal', 'promising', 'needing_attention']
 # Credits per cluster
 mahsa_credit_cellulosic = {'champion': 25000000000,
-                'loyal': 15000000000,
-                'promising': 2000000000,
-                'needing_attention': 0,
-                'New Customers': 0}
-alireza_credit_cellulosic = {'champion': 10000000000,
-                           'loyal': 7000000000,
-                           'promising': 1000000000,
+                           'loyal': 15000000000,
+                           'promising': 2000000000,
                            'needing_attention': 0,
-                            'New Customers': 0}
+                           'New Customers': 0}
+alireza_credit_cellulosic = {'champion': 10000000000,
+                             'loyal': 7000000000,
+                             'promising': 1000000000,
+                             'needing_attention': 0,
+                             'New Customers': 0}
 credit_wood = {'champion': 40000000000,
                'loyal': 5000000000,
                'promising': 1000000000,
@@ -86,10 +87,10 @@ df_debts_positive.loc[index, 'Title'] = df_debts_positive[df_debts_positive['doc
 # Cheques
 df_cheques = pd.read_sql("SELECT * FROM dbo.ReceivableCheques", cnxn)
 df_cheques_positive = df_cheques[df_cheques['ChequeStatus'] == 'واخواست شده']
-df_cheques_positive_customers = pd.DataFrame(columns=['cheque', 'bouncedCheck'])
+df_cheques_positive_customers = pd.DataFrame(columns=['cheque', 'bounced_cheque'])
 df_cheques_positive_customers.loc[:, 'cheque'] = df_cheques_positive['trimmedCustomer'].unique()
-df_cheques_positive_customers.loc[:, 'bouncedCheck'] = True
-df_debts_positive_grouped = df_debts_positive.groupby(['Title'])['Debit', 'FinalElapsedDays'].sum()
+df_cheques_positive_customers.loc[:, 'bounced_cheque'] = 1
+df_debts_positive_grouped = df_debts_positive.groupby(['Title'])[['Debit', 'FinalElapsedDays']].sum()
 
 
 def mean_purchase_widnow(df):
@@ -121,30 +122,30 @@ def cluster_naming(df):
 def credit_system(df, credit_dictionary):
     dff = df.merge(df_debts_positive_grouped, how='left', left_on='Customer', right_on='Title')
     dfff = dff.merge(df_cheques_positive_customers, how='left', left_on='Customer', right_on='cheque')
-    dfff.bouncedCheck.fillna(False, inplace=True)
+    dfff.bounced_cheque.fillna(0, inplace=True)
     dfff['FinalElapsedDays'].fillna(0, inplace=True)
     dfff['Debit'].fillna(0, inplace=True)
     for cluster in cluster_names:
         index = dfff[(dfff['cluster'] == cluster) & (dfff['FinalElapsedDays'] >= -30)].index
-        dfff.loc[index, 'credit (IRR)'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit']*first_month_penalty
-        dfff.loc[index, "Base Credit"]= credit_dictionary[cluster]
+        dfff.loc[index, 'credit_IRR'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit']*first_month_penalty
+        dfff.loc[index, "base_credit"]= credit_dictionary[cluster]
 
         index = dfff[
             (dfff['cluster'] == cluster) & (dfff['FinalElapsedDays'] >= -60) & (dfff['FinalElapsedDays'] < -30)].index
-        dfff.loc[index, 'credit (IRR)'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit'] * second_month_penalty
-        dfff.loc[index, "Base Credit"]= credit_dictionary[cluster]
+        dfff.loc[index, 'credit_IRR'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit'] * second_month_penalty
+        dfff.loc[index, "base_credit"]= credit_dictionary[cluster]
 
         index = dfff[
             (dfff['cluster'] == cluster) & (dfff['FinalElapsedDays'] >= -90) & (dfff['FinalElapsedDays'] < -60)].index
-        dfff.loc[index, 'credit (IRR)'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit'] * third_month_penalty
-        dfff.loc[index, "Base Credit"]= credit_dictionary[cluster]
+        dfff.loc[index, 'credit_IRR'] = credit_dictionary[cluster] - dfff.loc[index, 'Debit'] * third_month_penalty
+        dfff.loc[index, "base_credit"]= credit_dictionary[cluster]
 
         index = dfff[(dfff['cluster'] == cluster) & (dfff['FinalElapsedDays'] < -90)].index
-        dfff.loc[index, 'credit (IRR)'] = 0
-        dfff.loc[index, "Base Credit"]= credit_dictionary[cluster]
+        dfff.loc[index, 'credit_IRR'] = 0
+        dfff.loc[index, "base_credit"]= credit_dictionary[cluster]
 
-    index = dfff[dfff['bouncedCheck'] == True].index
-    dfff.loc[index, 'credit (IRR)'] = 0
+    index = dfff[dfff['bounced_cheque'] == 1].index
+    dfff.loc[index, 'credit_IRR'] = 0
 
     return dfff
 
@@ -172,7 +173,7 @@ def rfm_calculations(df):
         'InvoiceNumber': 'frequency',
         'Quantity': 'quantity',
         'Diff_y': 'latency',
-        'NetAmount': 'monetary (IRR)'
+        'NetAmount': 'monetary_IRR'
     }, inplace=True)
     new_customer_window_size = mean_purchase_widnow(df)
     retCustomers_index = rfm[rfm['latency'] > new_customer_window_size].index
@@ -183,12 +184,12 @@ def rfm_calculations(df):
     kmeans = KMeans(n_clusters=4, max_iter=50)
     kmeans.fit(rfm_norm[['recency', 'frequency', 'quantity']])
     rfm_norm['cluster'] = kmeans.labels_
-    ### Scoring 
+    ### Scoring
     rfm_norm['RFM_score'] = -rfm_norm['recency'] + rfm_norm['frequency'] + rfm_norm['quantity']
     rfm.loc[retCustomers_index, 'cluster'] = rfm_norm.loc[retCustomers_index, 'cluster']
     rfm.loc[retCustomers_index, 'RFM_score'] = rfm_norm.loc[retCustomers_index, 'RFM_score']
     rfm.cluster.fillna('New Customers', inplace=True)
-    rfm.loc[:, 'new_customer_window_size (days)'] = new_customer_window_size
+    rfm.loc[:, 'new_customer_window_size_days'] = new_customer_window_size
     rfm_norm = cluster_naming(rfm_norm)
     rfm.loc[retCustomers_index, 'cluster'] = rfm_norm.loc[retCustomers_index, 'cluster']
     index= rfm[rfm['cluster'] == 'New Customers'].index
@@ -197,7 +198,7 @@ def rfm_calculations(df):
     rfm = rfm.merge(right=df[[
         'CustomerCode', 'Customer']].drop_duplicates(), how='left', on='CustomerCode')
     rfm.rename(columns={
-        'recency': 'recency (days)'
+        'recency': 'recency_days'
     }, inplace=True)
     return rfm
 
@@ -206,19 +207,67 @@ def rfm_calculations(df):
 rfm_wood = rfm_calculations(df_wood)
 rfm_wood_with_credit = credit_system(rfm_wood, credit_wood)
 rfm_wood_with_credit.drop(columns=['cheque'], inplace=True)
+rfm_wood_with_credit.rename(columns={
+    'CustomerCode' : 'customer_code',
+    'Customer' : 'customer',
+    'Debit' : 'debit',
+    'FinalElapsedDays' : 'final_elapsed_days'
+}, inplace= True)
 rfm_wood_with_credit = rfm_wood_with_credit.sort_values(by='RFM_score', ascending=False)
 # RFM Cellulosic
 rfm_cellulosic_mahsa = rfm_calculations(df_cellulosic_mahsa)
 rfm_cellulosic_mahsa_with_credit = credit_system(rfm_cellulosic_mahsa, mahsa_credit_cellulosic)
 rfm_cellulosic_mahsa_with_credit.drop(columns=['cheque'], inplace=True)
+rfm_cellulosic_mahsa_with_credit.rename(columns={
+    'CustomerCode' : 'customer_code',
+    'Customer' : 'customer',
+    'Debit' : 'debit',
+    'FinalElapsedDays' : 'final_elapsed_days'
+}, inplace= True)
 rfm_cellulosic_mahsa_with_credit = rfm_cellulosic_mahsa_with_credit.sort_values(by='RFM_score', ascending=False)
 rfm_cellulosic_alireza = rfm_calculations(df_cellulosic_alireza)
 rfm_cellulosic_alireza_with_credit = credit_system(rfm_cellulosic_alireza, alireza_credit_cellulosic)
 rfm_cellulosic_alireza_with_credit.drop(columns=['cheque'], inplace=True)
+rfm_cellulosic_alireza_with_credit.rename(columns={
+    'CustomerCode' : 'customer_code',
+    'Customer' : 'customer',
+    'Debit' : 'debit',
+    'FinalElapsedDays' : 'final_elapsed_days'
+}, inplace= True)
 rfm_cellulosic_alireza_with_credit = rfm_cellulosic_alireza_with_credit.sort_values(by='RFM_score', ascending=False)
 # RFM Chemical - Polymer
 rfm_chemical = rfm_calculations(df_chemical_polymer)
 rfm_chemical_with_credit = credit_system(rfm_chemical, credit_chemical)
 rfm_chemical_with_credit.drop(columns=['cheque'], inplace=True)
+rfm_chemical_with_credit.rename(columns={
+    'CustomerCode' : 'customer_code',
+    'Customer' : 'customer',
+    'Debit' : 'debit',
+    'FinalElapsedDays' : 'final_elapsed_days'
+}, inplace= True)
 rfm_chemical_with_credit = rfm_chemical_with_credit.sort_values(by='RFM_score', ascending=False)
 
+# Write DataFrames to SQL Server
+server = '192.168.10.41'
+database = 'Marketing_DataMart'
+username = 'SelfServiceBI'
+password = 'MobbMobb66!'
+engine = create_engine(f'mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+17+for+SQL+Server')
+# For dashboard tables:
+# wood
+rfm_wood_with_credit.to_sql(name='rfm_wood_with_credit', con=engine, index=False, if_exists='replace')
+# cellulosic_Mahsa
+rfm_cellulosic_mahsa_with_credit.to_sql(name='rfm_cellulosic_mahsa_with_credit', con=engine, index=False, if_exists='replace')
+# cellulosic_Alireza
+rfm_cellulosic_alireza_with_credit.to_sql(name='rfm_cellulosic_alireza_with_credit', con=engine, index=False, if_exists='replace')
+# chemical-polymer
+rfm_chemical_with_credit.to_sql(name='rfm_chemical_with_credit', con=engine, index=False, if_exists='replace')
+# For history tables
+# wood
+rfm_wood_with_credit.to_sql(name='history_rfm_wood_with_credit', con=engine, index=False, if_exists='append')
+# cellulosic_Mahsa
+rfm_cellulosic_mahsa_with_credit.to_sql(name='history_rfm_cellulosic_mahsa_with_credit', con=engine, index=False, if_exists='append')
+# cellulosic_Alireza
+rfm_cellulosic_alireza_with_credit.to_sql(name='history_rfm_cellulosic_alireza_with_credit', con=engine, index=False, if_exists='append')
+# chemical-polymer
+rfm_chemical_with_credit.to_sql(name='history_rfm_chemical_with_credit', con=engine, index=False, if_exists='append')
