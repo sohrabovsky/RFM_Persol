@@ -1,2 +1,2 @@
 "# RFM_Persol" 
-In this version a scroing function based on quantiles are added.
+This RFM model contains calculated credits for each customer based on segmentation, bounced cheques, and debits for each customer.
