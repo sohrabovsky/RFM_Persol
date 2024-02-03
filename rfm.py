@@ -264,10 +264,10 @@ rfm_cellulosic_alireza_with_credit.to_sql(name='rfm_cellulosic_alireza_with_cred
 rfm_chemical_with_credit.to_sql(name='rfm_chemical_with_credit', con=engine, index=False, if_exists='replace')
 # For history tables
 # wood
-rfm_wood_with_credit.to_sql(name='history_rfm_wood_with_credit', con=engine, index=False, if_exists='append')
+rfm_wood_with_credit.to_sql(name='history_rfm_wood_with_credit', con=engine, index=False, if_exists='replace')
 # cellulosic_Mahsa
-rfm_cellulosic_mahsa_with_credit.to_sql(name='history_rfm_cellulosic_mahsa_with_credit', con=engine, index=False, if_exists='append')
+rfm_cellulosic_mahsa_with_credit.to_sql(name='history_rfm_cellulosic_mahsa_with_credit', con=engine, index=False, if_exists='replace')
 # cellulosic_Alireza
-rfm_cellulosic_alireza_with_credit.to_sql(name='history_rfm_cellulosic_alireza_with_credit', con=engine, index=False, if_exists='append')
+rfm_cellulosic_alireza_with_credit.to_sql(name='history_rfm_cellulosic_alireza_with_credit', con=engine, index=False, if_exists='replace')
 # chemical-polymer
-rfm_chemical_with_credit.to_sql(name='history_rfm_chemical_with_credit', con=engine, index=False, if_exists='append')
+rfm_chemical_with_credit.to_sql(name='history_rfm_chemical_with_credit', con=engine, index=False, if_exists='replace')
