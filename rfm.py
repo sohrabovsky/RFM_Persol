@@ -1,3 +1,21 @@
+"""
+RFM Clustering and Credit Calculation Script
+
+Author: [Sohrab Salehin]
+Date: [2/4/2024]
+
+Description:
+This Python script is designed for performing RFM (Recency, Frequency, Quantity) clustering on customer data for Persol, a B2B sales company.
+The clustering algorithm is KMeans.
+The script also includes calculations for assigning credit scores to each customer based on their RFM cluster.
+RFM clustering is a powerful technique to segment customers based on their purchasing behavior, allowing Persol to tailor marketing and sales strategies for different customer segments.
+
+Usage:
+The report is updating daily and is accessible in Persol Power BI sever report.
+
+Note: Customize the script as needed for specific data formats and business requirements.
+
+"""
 from functools import reduce
 import pandas as pd
 import numpy as np
@@ -264,10 +282,10 @@ rfm_cellulosic_alireza_with_credit.to_sql(name='rfm_cellulosic_alireza_with_cred
 rfm_chemical_with_credit.to_sql(name='rfm_chemical_with_credit', con=engine, index=False, if_exists='replace')
 # For history tables
 # wood
-rfm_wood_with_credit.to_sql(name='history_rfm_wood_with_credit', con=engine, index=False, if_exists='replace')
+rfm_wood_with_credit.to_sql(name='history_rfm_wood_with_credit', con=engine, index=False, if_exists='append')
 # cellulosic_Mahsa
-rfm_cellulosic_mahsa_with_credit.to_sql(name='history_rfm_cellulosic_mahsa_with_credit', con=engine, index=False, if_exists='replace')
+rfm_cellulosic_mahsa_with_credit.to_sql(name='history_rfm_cellulosic_mahsa_with_credit', con=engine, index=False, if_exists='append')
 # cellulosic_Alireza
-rfm_cellulosic_alireza_with_credit.to_sql(name='history_rfm_cellulosic_alireza_with_credit', con=engine, index=False, if_exists='replace')
+rfm_cellulosic_alireza_with_credit.to_sql(name='history_rfm_cellulosic_alireza_with_credit', con=engine, index=False, if_exists='append')
 # chemical-polymer
-rfm_chemical_with_credit.to_sql(name='history_rfm_chemical_with_credit', con=engine, index=False, if_exists='replace')
+rfm_chemical_with_credit.to_sql(name='history_rfm_chemical_with_credit', con=engine, index=False, if_exists='append')
